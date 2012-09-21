@@ -1,11 +1,13 @@
 //My Bot
 var Bot = require("./index");
+var BasicBot = require("./BasicBot");
 
 var AUTH   = 'BubUFZiLBRCpkFrVMVXFCcxy';
 var USERID = '5057de39aaa5cd46210000be';
 var ROOMID = '4e278f3414169c7c218d136c';
 
 var bot = new Bot(AUTH, USERID, ROOMID);
+var myBot = new BasicBot.start(bot);
 
 var roomObj = new Object();
 
@@ -13,112 +15,278 @@ var authInfo = {
 	masterid: "4ffc9d11eb35c124cb00001d",
 	selfid: USERID
 }
-
-bot.on('speak', function (data) {
-   // Get the data
-   var name = data.name;
-   var text = data.text;
-   var userid = data.userid;
+myBot.bot.on("speak", function(data) {
+	var name = data.name;
+	var text = data.text;
+	var userid = data.userid;
 	
-   // Respond to "/nod" command
+	//Vote Up
    if (text.match(/^\/nod$/) || text.match(/^\/dontberude$/) || text.match(/^\/don\'tberude$/)) {
-		bot.vote("up");
+		myBot.voteup();
 	}
-	// Respond to "/boo" command
+	
+	//Vote Down
 	if (text.match(/^\/boo$/)) {
-		bot.vote("down");
+		myBot.vote("down");
 	}
-	// Add a song to the queue
+	
+	/********************Private Commands***************************/
+	
+	//Add a song to the queue
 	if (text.match(/^\/addthis$/)) {
-		
 		if (userid == authInfo["masterid"]) {
-			if (typeof(roomObj["songid"]) != "undefined") {
-				bot.snag(function() {
-					bot.playlistAdd(roomObj["songid"], function() {
-						bot.vote("up");
-						bot.speak("Mmmm.. luv me sum tunez");
-					});
-				});
-				
+			if (typeof(roomObj["songdata"]) != "undefined") {
+				myBot.addsong(roomObj["songdata"]);
 			}
 			else {
-				bot.speak("Aww.. shucks. Can't get the song info");
+				myBot.sendmsg("Aww.. shucks. Can't get the song info");
 			}
 		}
 		else {
-			bot.speak("Sorry @" + name + ", that is a restricted command.");
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Add a favorite room
+	if (text.match(/^\/addroom$/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.addfavoriteroom();
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Add a fan
+	if (text.match(/^\/addfan/)) {
+		if (userid == authInfo["masterid"]) {
+			var fanName = text.split("/addfan ")[1];
+			myBot.addfan(fanName);
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Change the bot's avatar
+	if (text.match(/^\/changeavatar/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.setavatar();
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Become a DJ
+	if (text.match(/^\/hopon$/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.becomedj();
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Exit the DJ Booth
+	if (text.match(/^\/hopoff$/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.enddj();
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Enter the room of the bot's user
+	if (text.match(/^\/comehither$/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.summon(userid);
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
+		}
+	}
+	
+	//Skip the bot's current song
+	if (text.match(/^\/skipthis$/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.skip();
+		}
+		else {
+			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
 		}
 	}
 });
 
-bot.on("pmmed", function(data) {
+myBot.bot.on("pmmed", function(data) {
 	var text = data.text;
-	console.log(text);
-	if (data.senderid == authInfo["masterid"] || data.senderid == data.userid) {
-		console.log(text);
-		if (text.match(/nod/)) {
-			bot.vote("up");
+	var userid = data.senderid;
+	
+	/********************Private Commands***************************/
+	
+	
+	if (text.match(/nod/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.voteup();
 		}
-		if (text.match(/addsong/) || text.match(/addthis/)) {
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+	if (text.match(/addsong/) || text.match(/addthis/)) {
+		if (userid == authInfo["masterid"]) {
 			if (typeof(roomObj["songid"]) != "undefined") {
-				bot.snag(function() {
-					bot.playlistAdd(roomObj["songid"], function() {
-						bot.vote("up");
-						bot.speak("Mmmm.. luv me sum tunez");
-					});
-				});
+				if (typeof(roomObj["songdata"]) != "undefined") {
+					myBot.addsong(roomObj["songdata"]);
+				}
 			}
 			else {
-				bot.speak("Aww.. shucks. Can't get the song info");
+				myBot.sendmsg("Aww.. shucks. Can't get the song info");
 			}
 		}
-		if (text.match(/boo/)) {
-			bot.vote("down");
-		}
-		if (text.match(/logcurrentsongobj/)) {
-			for (var key in roomObj) {
-				console.log(key + ": " + roomObj[key]);
-			}
-		}
-		if (text.match(/^\/say/)) {
-			console.log(text);
-			var msg = text.split("/say ")[1];
-			console.log(msg);
-			bot.speak(msg);
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
 		}
 	}
-	else {
-		bot.speak("What's that? You don't have the proper badge!");
+	if (text.match(/boo/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.votedown();
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
 	}
 	
+	if (text.match(/^\/say/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.couriermsg(text);
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
 	
+	if (text.match(/addroom/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.addfavoriteroom();
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+	
+	if (text.match(/addfan/)) {
+		if (userid == authInfo["masterid"]) {
+		var fanName = text.split("addfan ")[1];
+			myBot.addfan(fanName);
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+	
+	if (text.match(/changeavatar/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.setavatar();
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+	
+	if (text.match(/hopon/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.becomedj();
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+
+	if (text.match(/hopoff/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.enddj();
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+	
+	if (text.match(/comehither/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.summon(userid);
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+	
+	if (text.match(/skipthis/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.skip();
+		}
+		else {
+			myBot.sendmsg("What's that? You don't have the proper badge!");
+		}
+	}
+
 });
 
-bot.on("newsong", function(data) {
-	var roomMetaData = data["room"]["metadata"];
-	var songid = roomMetaData["current_song"]["_id"];
+myBot.bot.on("newsong", function(data) {
+	var roomData = data["room"];
+	var roomMetaData = roomData["metadata"];
+	var songdata = roomMetaData["current_song"];
+	var songid = songdata["_id"];
 	var djid = roomMetaData["current_dj"];
 	
+	roomObj["alldata"] = roomData;
+	
+	roomObj["songdata"] = songdata;
 	roomObj["songid"] = songid;
 	roomObj["dj"] = djid;
-	
 });
 
-bot.on("endsong", function(data) {
-	var roomMetaData = data["room"]["metadata"];
-	var songid = roomMetaData["current_song"]["_id"];
+myBot.bot.on("endsong", function(data) {
+	var roomData = data["room"];
+	var roomMetaData = roomData["metadata"];
+	var songdata = roomMetaData["current_song"];
+	var songid = songdata["_id"];
 	var djid = roomMetaData["current_dj"];
 	
 	roomObj["previoussong"] = songid;
 	roomObj["previousdj"] = djid;
 	
+	myBot.logvotes(roomMetaData);
+	
 });
 
-bot.on("roomChanged", function(data) {
-	var roomMetaData = data["room"]["metadata"];
-	var songid = roomMetaData["current_song"]["_id"];
+myBot.bot.on("roomChanged", function(data) {
+	var roomData = data["room"];
+	var roomMetaData = roomData["metadata"];
+	var songdata = roomMetaData["current_song"];
+	var songid = songdata["_id"];
 	var djid = roomMetaData["current_dj"];
 	
+	roomObj["alldata"] = roomData;
+	
+	roomObj["songdata"] = songdata;
 	roomObj["songid"] = songid;
 	roomObj["dj"] = djid;
+	
+	console.log("Room " + data["room"]["name_lower"] + " entered");
+	
+	roomObj["userlist"] = new Object();
+	var users = data.users;
+    for (var i=0; i<users.length; i++) {
+      var user = users[i];
+      roomObj["userlist"][user.userid] = user;
+    }
 });
+
+myBot.bot.on("update_votes", function(data) {
+	var votedata = data.room.metadata;
+	myBot.recordvotes(votedata);
+});
+
+console.log("bot launched.");
