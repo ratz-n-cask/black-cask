@@ -1,27 +1,30 @@
 //My Bot
 var Bot = require("./index");
-var BasicBot = require("./BasicBot");
+var BotContainer = require("./botcontainer").BotContainer;
 
 var AUTH   = 'BubUFZiLBRCpkFrVMVXFCcxy';
 var USERID = '5057de39aaa5cd46210000be';
 var ROOMID = '4e278f3414169c7c218d136c';
 
 var bot = new Bot(AUTH, USERID, ROOMID);
-var myBot = new BasicBot.start(bot);
+var botContainer = new BotContainer(bot);
+var myBot = botContainer.basicbot;
+var botInfo = botContainer.botinfo;
 
 var roomObj = new Object();
 
 var authInfo = {
-	masterid: "4ffc9d11eb35c124cb00001d",
-	selfid: USERID
+	masterid: botInfo.MASTERID,
+	selfid: botInfo.USERID
 }
+
 myBot.bot.on("speak", function(data) {
 	var name = data.name;
 	var text = data.text;
 	var userid = data.userid;
 	
 	//Vote Up
-   if (text.match(/^\/nod$/) || text.match(/^\/dontberude$/) || text.match(/^\/don\'tberude$/)) {
+	if (text.match(/^\/nod$/) || text.match(/^\/dontberude$/) || text.match(/^\/don\'tberude$/)) {
 		myBot.voteup();
 	}
 	
@@ -68,16 +71,6 @@ myBot.bot.on("speak", function(data) {
 		}
 	}
 	
-	//Change the bot's avatar
-	if (text.match(/^\/changeavatar/)) {
-		if (userid == authInfo["masterid"]) {
-			myBot.setavatar();
-		}
-		else {
-			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
-		}
-	}
-	
 	//Become a DJ
 	if (text.match(/^\/hopon$/)) {
 		if (userid == authInfo["masterid"]) {
@@ -97,41 +90,53 @@ myBot.bot.on("speak", function(data) {
 			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
 		}
 	}
-	
-	//Enter the room of the bot's user
-	if (text.match(/^\/comehither$/)) {
+
+	//Skip the bot's current song
+	if (text.match(/^\/skipthis$/)) {
 		if (userid == authInfo["masterid"]) {
-			myBot.summon(userid);
+			myBot.skipsong();
 		}
 		else {
 			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
 		}
 	}
-	
-	//Skip the bot's current song
-	if (text.match(/^\/skipthis$/)) {
+
+	//Get Song Info
+	if (text.match(/^\/song$/)) {
 		if (userid == authInfo["masterid"]) {
-			myBot.skip();
+			myBot.getsonginfo(false);
 		}
 		else {
 			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
 		}
+	}
+
+	//About
+	if (text.match(/^\/about$/)) {
+		myBot.sendmsg("Prometheus by @dopatraman");
+	}
+
+	//DirectMessage
+	if (text.match(/^@.prometheus$/)) {
+		console.log(text);
 	}
 });
 
 myBot.bot.on("pmmed", function(data) {
+	var name = data.name;
 	var text = data.text;
 	var userid = data.senderid;
-	
+
 	/********************Private Commands***************************/
 	
-	
+	console.log(text);
+
 	if (text.match(/nod/)) {
 		if (userid == authInfo["masterid"]) {
 			myBot.voteup();
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	if (text.match(/addsong/) || text.match(/addthis/)) {
@@ -142,11 +147,11 @@ myBot.bot.on("pmmed", function(data) {
 				}
 			}
 			else {
-				myBot.sendmsg("Aww.. shucks. Can't get the song info");
+				myBot.whisper("Aww.. shucks. Can't get the song info", userid);
 			}
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	if (text.match(/boo/)) {
@@ -154,7 +159,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.votedown();
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	
@@ -163,7 +168,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.couriermsg(text);
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	
@@ -172,7 +177,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.addfavoriteroom();
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	
@@ -182,16 +187,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.addfan(fanName);
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
-		}
-	}
-	
-	if (text.match(/changeavatar/)) {
-		if (userid == authInfo["masterid"]) {
-			myBot.setavatar();
-		}
-		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	
@@ -200,7 +196,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.becomedj();
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 
@@ -209,28 +205,81 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.enddj();
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	
-	if (text.match(/comehither/)) {
+	if (text.match(/^goforthto/)) {
 		if (userid == authInfo["masterid"]) {
-			myBot.summon(userid);
+			myBot.sendtoroom_raw(text, "goforthto ");
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 	
 	if (text.match(/skipthis/)) {
 		if (userid == authInfo["masterid"]) {
-			myBot.skip();
+			myBot.skipsong();
 		}
 		else {
-			myBot.sendmsg("What's that? You don't have the proper badge!");
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
 		}
 	}
 
+	if (text.match(/^getroominfo/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.getroominfo_raw(text, "getroominfo ", false);
+		}
+		else {
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
+		}
+	}
+	if (text.match(/^getusers/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.getroomusers(false);
+		}
+		else {
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
+		}
+	}
+	if (text.match(/^getuserinfo/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.getuserinfo_raw(text, "getuserinfo ", false);
+		}
+		else {
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
+		}
+	}
+	if (text.match(/^songinfo/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.getsonginfo(true);
+		}
+		else {
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
+		}
+	}
+	if (text.match(/^getfavoriterooms/)) {
+		if (userid == authInfo["masterid"]) {
+			myBot.getfavoriterooms();
+		}
+		else {
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
+		}
+	}
+	if (text.match(/^whisper/)) {
+		if (userid == authInfo["masterid"]) {
+			var rawstring = text.split("whisper ")[1];
+			var msgarray = rawstring.split(" msg:");
+			var username = msgarray[0];
+			var msg = msgarray[1];
+			myBot.makewhisper(username, msg);
+		}
+		else {
+			myBot.whisper("What's that? You don't have the proper badge!", userid);
+		}
+	}
+	
 });
 
 myBot.bot.on("newsong", function(data) {
@@ -238,6 +287,8 @@ myBot.bot.on("newsong", function(data) {
 	var roomMetaData = roomData["metadata"];
 	var songdata = roomMetaData["current_song"];
 	var songid = songdata["_id"];
+	var songname = songdata.metadata.song;
+	var songartist = songdata.metadata.artist;
 	var djid = roomMetaData["current_dj"];
 	
 	roomObj["alldata"] = roomData;
@@ -245,6 +296,8 @@ myBot.bot.on("newsong", function(data) {
 	roomObj["songdata"] = songdata;
 	roomObj["songid"] = songid;
 	roomObj["dj"] = djid;
+
+	console.log(songname + " by " + songartist + " has just started.\n")
 });
 
 myBot.bot.on("endsong", function(data) {
@@ -258,35 +311,46 @@ myBot.bot.on("endsong", function(data) {
 	roomObj["previousdj"] = djid;
 	
 	myBot.logvotes(roomMetaData);
-	
 });
 
 myBot.bot.on("roomChanged", function(data) {
-	var roomData = data["room"];
-	var roomMetaData = roomData["metadata"];
-	var songdata = roomMetaData["current_song"];
-	var songid = songdata["_id"];
-	var djid = roomMetaData["current_dj"];
+	var roomData;
+	if (data) {
+		roomData = data.room;
+		roomObj["alldata"] = data.room;	
+
+		console.log("Room " + roomData["name_lower"] + " entered \n");
+	}
+
+	var roomMetaData;
+	if (roomData) {
+		roomMetaData = roomData.metadata;
+	}
+	var songData;
+	if (roomMetaData) {
+		songData = roomMetaData.current_song;
+		roomObj["songdata"] = songData;
+		roomObj["dj"] = roomMetaData.current_dj;
+	}
+	var songId;
+	if (songData) {
+		songId = songData._id;
+		roomObj["songid"] = songId;
+
+		var songMetaData = songData.metadata;
+		var songName = songMetaData.song;
+		var songArtist = songMetaData.artist;
+
+		console.log(songName + " by " + songArtist + " is currently playing.\n");
+	}
 	
-	roomObj["alldata"] = roomData;
-	
-	roomObj["songdata"] = songdata;
-	roomObj["songid"] = songid;
-	roomObj["dj"] = djid;
-	
-	console.log("Room " + data["room"]["name_lower"] + " entered");
-	
-	roomObj["userlist"] = new Object();
-	var users = data.users;
-    for (var i=0; i<users.length; i++) {
-      var user = users[i];
-      roomObj["userlist"][user.userid] = user;
-    }
 });
 
 myBot.bot.on("update_votes", function(data) {
-	var votedata = data.room.metadata;
-	myBot.recordvotes(votedata);
+	var roomData = data["room"];
+	var roomMetaData = roomData["metadata"];
+	//console.log("roomdata: " + data.room);
+	//myBot.recordvotes(roomMetaData);
 });
 
-console.log("bot launched.");
+console.log("bot launched. \n");

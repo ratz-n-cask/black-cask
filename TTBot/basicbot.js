@@ -1,12 +1,10 @@
-function start(bot) {
+function start(bot, botcontainer) {
 	this.bot = bot;
-	
+	this.c = botcontainer;
+	this.botinfo = this.c.botinfo;
+
 	this.id = this.bot.userId;
 	this.roomid = this.bot.roomId;
-	
-	this.sayings = new Array();
-	this.rooms = new Array();
-	this.playlists = new Object();
 	
 	this.avatarcount = 0;
 	
@@ -17,15 +15,25 @@ function start(bot) {
 		details: new Array()
 	}
 	
-	this.addroom = function(roomid) {
-		this.rooms.push(roomid);
+	this.getfavoriterooms = function(cb) {
+		var that = this;
+		this.bot.getFavorites(function(data) {
+			console.log(data);
+			if (cb) {
+				cb(data);
+			}
+		});
+	}
+		
+	this.addroom = function(roomname, roomid) {
+		this.botinfo.rooms[roomname] = roomid;
 	}
 	this.addplaylist = function(playlistname) {
-		this.playlists[playlistname] = new Array();
+		this.botinfo.playlists[playlistname] = new Array();
 	}
 	
 	this.addsaying = function(phrase) {
-		this.sayings.push(phrase);
+		this.botinfo.sayings.push(phrase);
 	}
 	this.addsayings = function(phrases) {
 		for (var i = 0; i < phrases.length; i++) {
@@ -33,6 +41,9 @@ function start(bot) {
 		}
 	}
 	
+	this.sayphrase = function(num) {
+
+	}
 	this.sendmsg = function(msg, user) {
 		if (typeof(user) != "undefined") {
 			this.bot.speak("@" + user + " " + msg);
@@ -41,7 +52,19 @@ function start(bot) {
 			this.bot.speak(msg);
 		}
 	}
-	
+	this.whisper = function(msg, userid, cb) {
+		this.bot.pm(msg, userid, function(data) {
+			
+		});
+	}
+	this.makewhisper = function(username, msg) {
+		var that = this;
+		this.getuserinfo(username, false, function(data) {
+			var userid = data._id;
+			that.whisper(msg, userid);
+		});
+		
+	}
 	this.couriermsg = function(text) {
 		console.log(text);
 		var msg = text.split("/say ")[1];
@@ -60,48 +83,55 @@ function start(bot) {
 	}
 	
 	this.logvotes = function(metadata) {
-		var votedata = metadata.votelog;
+		var vl = this.recordvotes(metadata);
 		
-		console.log("votedata: " + votedata);
-		
-		this.recordvotes(votedata);
-		
-		console.log("myvotelog: " + this.votelog);
-		
-		if (this.votelog["for"] > 0.8) {
-			var songid = metadata.current_song._id;
-			var songname = metadata.current_song.metadata.song;
-			this.addsong(songid);
+		console.log("up: " + vl["up"]);
+		console.log("for: " + vl["for"]);
+		console.log("listeners: " + vl["listeners"] + "\n");
+
+		if (vl["for"] >= 0.5) {
+			var songdata = metadata.current_song;
+			var songname = songdata.metadata.song;
+			this.addsong(songdata);
 			
-			console.log(songname + " has been added by popular demand.");
+			this.sendmsg(":sound:" + songname + " has been added by popular demand.");
 		}
 	}
 	
-	this.recordvotes = function(votedata) {
+	this.recordvotes = function(metadata) {
+		var listeners = metadata.listeners;
+		var votedata = metadata.votelog;
+		console.log("metadata: " + metadata + "\n");		
+		var uptotal = metadata.upvotes;
+		var downtotal = metadata.downvotes;
 		
-		console.log(votedata);
-		
-		var uptotal = votedata.upvotes - this.votelog.up;
-		var downtotal = votedata.downvotes - this.votelog.down;
-		var listeners = votedata.listeners;
 		var percentageinfavor = uptotal/listeners;
 		var percentageagainst = downtotal/listeners;
 		
-		this.votelog["up"] = uptotal;
-		this.votelog["down"] = downtotal;
-		this.votelog["listeners"] = listeners;
-		this.votelog["for"] = percentageinfavor;
-		this.votelog["against"] = percentageagainst;
-		this.votelog["details"] = votedata.votelog;
+		var votelog = {}
 		
+		votelog["up"] = uptotal;
+		votelog["down"] = downtotal;
+		votelog["listeners"] = listeners;
+		votelog["for"] = percentageinfavor;
+		votelog["against"] = percentageagainst;
+
+		return votelog;
 	}
 	
 	this.snaganimation = function(cb) {
 		this.bot.snag(cb);
 	}
 	this.queuesong = function(songid, songname, cb) {
-		this.bot.playlistAdd(songid, cb);
-		console.log("You have just added " + songname + " to your queue!");
+		this.bot.playlistAdd(songid, function(data) {
+			if (data.success) {
+				console.log("You have just added " + songname + " to your queue!");
+			}
+			else {
+				console.log("Could not add " + songname + " to queue.");
+			}
+		})
+		
 	}
 	
 	this.addsong = function(songdata, cb) {
@@ -119,22 +149,29 @@ function start(bot) {
 	this.skipsong = function(cb) {
 		this.bot.skip(cb);
 	}
-	
+
 	this.addfan = function(fanname, cb) {
-		var fanid = this.bot.getUserId(fanname);
-		this.bot.becomeFan(fanid, cb);
-		
-		console.log("You just became a fan of " + fanname + ".");
+		var that = this;
+		this.getuserinfo(fanname, false, function(data) {
+			var fanid = data._id;
+			that.bot.becomeFan(fanid, function(data) {
+				if (data.success) {
+					console.log("You just became a fan of " + fanname + ".");
+				}
+			});
+		});
 	}
 	
-	this.removefan = function(fanname, fanid) {
-		if (fanname == "" && typeof(fanid) != "undefined") {
-			this.bot.removeFan(fanid);
-		}
-		else {
-			var fanid = this.bot.getUserId(fanname);
-			this.bot.removeFan(fanid);
-		}
+	this.removefan = function(fanname) {
+		var that = this;
+		this.getuserinfo(fanname, false, function(data) {
+			var fanid = data._id;
+			that.bot.removeFan(fanid, function(data) {
+				if (data.success) {
+					console.log("You just unfanned " + fanname + ".");
+				}
+			});
+		});
 	}
 	
 	this.addfavoriteroom = function() {
@@ -142,18 +179,15 @@ function start(bot) {
 		this.bot.roomInfo(function(data) {
 			var roomname = data.room.name;
 			var roomid = data.room.roomid;
-			
-			that.bot.addFavorite(roomid);
-			
-			console.log(roomname + " has been added to your favorites!");
-		});
-	}
-	
-	this.setavatar = function(cb) {
-		var that = this;
-		this.bot.getAvatarIds(function(data) {
-			that.bot.setAvatar(data[that.avatarcount], cb);
-			that.avatarcount += 1;
+			var myroom = that.roomid;
+
+			if (roomid != myroom) {
+				that.bot.addFavorite(roomid);
+				console.log(roomname + " has been added to your favorites!");
+			}
+			else {
+				console.log(roomname + " is already one of your favorite rooms!");
+			}
 		});
 	}
 	
@@ -170,29 +204,104 @@ function start(bot) {
 	this.enterroom = function(roomid, cb) {
 		this.bot.roomRegister(roomid, cb);
 	}
-	
-	this.summon = function(id, cb) {
-		var that = this;
-		this.bot.stalk(id, true, function(data) {
-			var roomname = data.room.name;
-			var roomid = data.room.roomid;
-			var myroom = this.roomid;
-			
-			that.removefan("", id);
-			
-			if (roomid != myroom) {
-				that.bot.enterroom(roomid, cb)
-			}
-			else {
-				console.log("You are already in " + roomname + "!");
+	this.getrooms = function(num, cb) {
+		this.bot.listRooms(num, function(data) {
+			console.log(data.rooms);
+			if (cb) {
+				cb(data);
 			}
 		});
 	}
-	
-	this.sendtoroom = function(roomid, cb) {
-		this.bot.enterroom(roomid, cb);
+	this.getroominfo_raw = function(text, splitstring, songinfo) {
+		var that = this;
+		var roomname = text.split(splitstring)[1];
+		if (roomname) {
+			roomname = roomname.toLowerCase();
+			this.getspecificroominfo(roomname);
+		}
+		else {
+			this.getroominfo(songinfo);
+		}
 	}
-	
+	this.getspecificroominfo = function(roomname) {
+		this.getrooms(20, function(data) {
+			var found = false;
+			for (var i = 0; i < data.rooms.length; i++) {
+				var thisroom = data.rooms[i][0];
+				var thisroomname = thisroom.name_lower;
+				var thisroomid = thisroom.roomid;
+				if (thisroomname = roomname) {
+					console.log(thisroom);
+					found = true;
+				}
+			}
+			if (!found) {
+				console.log(roomname + " room not found... yet.");
+			}
+		});
+	}
+	this.getroominfo = function(songinfo, cb) {
+		this.bot.roomInfo(songinfo, function(data) {
+			console.log(data);
+		});
+	}
+	this.getroomusers = function(songinfo, cb) {
+		this.bot.roomInfo(songinfo, function(data) {
+			console.log(data.users);
+		});
+	}
+	this.getuserinfo_raw = function(text, splitstring, songinfo, cb) {
+		var username = text.split(splitstring)[1];
+		this.getuserinfo(username, songinfo, cb);
+	}
+	this.getuserinfo = function(username, songinfo, cb) {
+		this.bot.roomInfo(songinfo, function(data) {
+			var allusers = data.users;
+			var found = false;
+			for (var i = 0; i < allusers.length; i++) {
+				var thisuser = allusers[i];
+				var thisusername = thisuser.name;
+				if (thisusername == username) {
+					console.log(thisuser);
+					found = true;
+					if (cb) {
+						cb(thisuser);
+					}
+				}
+			}
+			if (!found) {
+				console.log(username + " not found.");
+			}
+		});
+	}
+	this.getsonginfo = function(pm) {
+		var that = this;
+		this.bot.roomInfo(true, function(data) {
+			var roommetadata = data.room.metadata;
+			var songlog = data.room.metadata.songlog;
+			var currentsong = songlog[songlog.length - 1];
+			if (pm) {
+				console.log(currentsong);	
+			}
+			else {
+				that.sendmsg(":sound::" + currentsong.metadata.song + " by " + currentsong.metadata.artist + ". " + roommetadata.upvotes + "+ // " + roommetadata.downvotes + "-.");
+			}
+		});
+	}
+	this.sendtoroom_raw = function(text, splitstring, cb) {
+		var roomname = text.split(splitstring)[1];
+		this.sendtoroom(roomname, cb);
+	}
+	this.sendtoroom = function(roomname, cb) {
+		var roomid = this.botinfo.rooms[roomname];
+		if (roomid) {
+			this.enterroom(roomid, cb);
+		}
+		else {
+			console.log(roomname + " is not a listed room.");
+		}
+	}
+
 	return this;
 }
 
