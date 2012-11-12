@@ -1,3 +1,5 @@
+//var repl = require("repl");
+var repl = require("repl");
 //My Bot
 var Bot = require("./index");
 var BotContainer = require("./botcontainer").BotContainer;
@@ -17,7 +19,7 @@ var authInfo = {
 	masterid: botInfo.MASTERID,
 	selfid: botInfo.USERID
 }
-
+repl.start("> ").context.mybot = myBot;
 myBot.bot.on("speak", function(data) {
 	var name = data.name;
 	var text = data.text;
