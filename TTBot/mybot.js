@@ -299,7 +299,7 @@ myBot.bot.on("newsong", function(data) {
 	roomObj["songid"] = songid;
 	roomObj["dj"] = djid;
 
-	console.log(songname + " by " + songartist + " has just started.\n")
+	myBot.cl.logmessage(songname + " by " + songartist + " has just started.\n")
 });
 
 myBot.bot.on("endsong", function(data) {
@@ -321,7 +321,7 @@ myBot.bot.on("roomChanged", function(data) {
 		roomData = data.room;
 		roomObj["alldata"] = data.room;	
 
-		console.log("Room " + roomData["name_lower"] + " entered \n");
+		myBot.cl.logmessage("Room " + roomData["name_lower"] + " entered \n");
 	}
 
 	var roomMetaData;
@@ -343,7 +343,7 @@ myBot.bot.on("roomChanged", function(data) {
 		var songName = songMetaData.song;
 		var songArtist = songMetaData.artist;
 
-		console.log(songName + " by " + songArtist + " is currently playing.\n");
+		myBot.cl.logmessage(songName + " by " + songArtist + " is currently playing.\n");
 	}
 	
 });
@@ -355,4 +355,4 @@ myBot.bot.on("update_votes", function(data) {
 	//myBot.recordvotes(roomMetaData);
 });
 
-console.log("bot launched. \n");
+myBot.cl.yellow("bot launched.");

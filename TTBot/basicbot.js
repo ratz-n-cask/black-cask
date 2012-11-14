@@ -1,6 +1,8 @@
 function start(bot, botcontainer) {
 	this.bot = bot;
 	this.c = botcontainer;
+	this.cl = this.c.cl;
+
 	this.botinfo = this.c.botinfo;
 
 	this.id = this.bot.userId;
@@ -53,8 +55,11 @@ function start(bot, botcontainer) {
 		}
 	}
 	this.whisper = function(msg, userid, cb) {
+		var that = this;
 		this.bot.pm(msg, userid, function(data) {
-			
+			if (data.success) {
+				that.cl.logmessage("success: true");
+			}
 		});
 	}
 	this.makewhisper = function(username, msg) {
@@ -85,9 +90,9 @@ function start(bot, botcontainer) {
 	this.logvotes = function(metadata) {
 		var vl = this.recordvotes(metadata);
 		
-		console.log("up: " + vl["up"]);
-		console.log("for: " + vl["for"]);
-		console.log("listeners: " + vl["listeners"] + "\n");
+		this.cl.logdata("up: " + vl["up"]);
+		this.cl.logdata("for: " + vl["for"]);
+		this.cl.logdata("listeners: " + vl["listeners"] + "\n");
 
 		if (vl["for"] >= 0.5) {
 			var songdata = metadata.current_song;
@@ -101,7 +106,7 @@ function start(bot, botcontainer) {
 	this.recordvotes = function(metadata) {
 		var listeners = metadata.listeners;
 		var votedata = metadata.votelog;
-		console.log("metadata: " + metadata + "\n");		
+		
 		var uptotal = metadata.upvotes;
 		var downtotal = metadata.downvotes;
 		
@@ -123,12 +128,13 @@ function start(bot, botcontainer) {
 		this.bot.snag(cb);
 	}
 	this.queuesong = function(songid, songname, cb) {
+		var that = this;
 		this.bot.playlistAdd(songid, function(data) {
 			if (data.success) {
-				console.log("You have just added " + songname + " to your queue!");
+				that.cl.logmessage("You have just added " + songname + " to your queue!");
 			}
 			else {
-				console.log("Could not add " + songname + " to queue.");
+				that.cl.logerror("Could not add " + songname + " to queue.");
 			}
 		})
 		
@@ -156,7 +162,7 @@ function start(bot, botcontainer) {
 			var fanid = data._id;
 			that.bot.becomeFan(fanid, function(data) {
 				if (data.success) {
-					console.log("You just became a fan of " + fanname + ".");
+					that.cl.logmessage("You just became a fan of " + fanname + ".");
 				}
 			});
 		});
@@ -168,7 +174,7 @@ function start(bot, botcontainer) {
 			var fanid = data._id;
 			that.bot.removeFan(fanid, function(data) {
 				if (data.success) {
-					console.log("You just unfanned " + fanname + ".");
+					that.cl.logcomment("You just unfanned " + fanname + ".");
 				}
 			});
 		});
@@ -183,30 +189,39 @@ function start(bot, botcontainer) {
 
 			if (roomid != myroom) {
 				that.bot.addFavorite(roomid);
-				console.log(roomname + " has been added to your favorites!");
+				that.cl.logmessage(roomname + " has been added to your favorites!");
 			}
 			else {
-				console.log(roomname + " is already one of your favorite rooms!");
+				that.cl.logmessage(roomname + " is already one of your favorite rooms!");
 			}
 		});
 	}
 	
 	this.becomedj = function(cb) {
 		var that = this;
-		this.bot.addDj(cb);
+		this.bot.addDj(function(data) {
+			if (data.success) {
+				that.cl.logmessage("You just hopped on the booth.")
+			}
+		});
 	}
 	
 	this.enddj = function(cb) {
 		var that = this;
-		this.bot.remDj(this.id);
+		this.bot.remDj(this.id, function(data) {
+			if (data.success) {
+				that.cl.logmessage("You just hopped off the booth.");
+			}
+		});
 	}
 	
 	this.enterroom = function(roomid, cb) {
 		this.bot.roomRegister(roomid, cb);
 	}
 	this.getrooms = function(num, cb) {
+		var that = this;
 		this.bot.listRooms(num, function(data) {
-			console.log(data.rooms);
+			that.cl.logdata(data.rooms);
 			if (cb) {
 				cb(data);
 			}
@@ -224,6 +239,7 @@ function start(bot, botcontainer) {
 		}
 	}
 	this.getspecificroominfo = function(roomname) {
+		var that = this;
 		this.getrooms(20, function(data) {
 			var found = false;
 			for (var i = 0; i < data.rooms.length; i++) {
@@ -231,23 +247,32 @@ function start(bot, botcontainer) {
 				var thisroomname = thisroom.name_lower;
 				var thisroomid = thisroom.roomid;
 				if (thisroomname = roomname) {
-					console.log(thisroom);
+					that.cl.logdata(thisroom);
 					found = true;
 				}
 			}
 			if (!found) {
-				console.log(roomname + " room not found... yet.");
+				that.cl.logerror(roomname + " room not found... yet.");
 			}
 		});
 	}
 	this.getroominfo = function(songinfo, cb) {
+		var that = this;
 		this.bot.roomInfo(songinfo, function(data) {
-			console.log(data);
+			that.cl.logdata(data);
 		});
 	}
 	this.getroomusers = function(songinfo, cb) {
+		var that = this;
 		this.bot.roomInfo(songinfo, function(data) {
-			console.log(data.users);
+			var users = data.users;
+			for (var i = 0; i < users.length; i++) {
+				var user = users[i];
+				for (var key in user) {
+					that.cl.logdata(key + ": " + user[key]);
+				}
+				console.log("\n");
+			}
 		});
 	}
 	this.getuserinfo_raw = function(text, splitstring, songinfo, cb) {
@@ -255,6 +280,7 @@ function start(bot, botcontainer) {
 		this.getuserinfo(username, songinfo, cb);
 	}
 	this.getuserinfo = function(username, songinfo, cb) {
+		var that = this;
 		this.bot.roomInfo(songinfo, function(data) {
 			var allusers = data.users;
 			var found = false;
@@ -262,7 +288,11 @@ function start(bot, botcontainer) {
 				var thisuser = allusers[i];
 				var thisusername = thisuser.name;
 				if (thisusername == username) {
-					console.log(thisuser);
+					//that.cl.logdata(thisuser);
+					for (var key in thisuser) {
+						that.cl.logdata(key + ": " + thisuser[key]);
+					}
+					console.log("\n");
 					found = true;
 					if (cb) {
 						cb(thisuser);
@@ -270,7 +300,7 @@ function start(bot, botcontainer) {
 				}
 			}
 			if (!found) {
-				console.log(username + " not found.");
+				that.cl.logerror(username + " not found.");
 			}
 		});
 	}
@@ -281,7 +311,7 @@ function start(bot, botcontainer) {
 			var songlog = data.room.metadata.songlog;
 			var currentsong = songlog[songlog.length - 1];
 			if (pm) {
-				console.log(currentsong);	
+				that.cl.logdata(currentsong);	
 			}
 			else {
 				that.sendmsg(":sound::" + currentsong.metadata.song + " by " + currentsong.metadata.artist + ". " + roommetadata.upvotes + "+ // " + roommetadata.downvotes + "-.");
@@ -298,7 +328,7 @@ function start(bot, botcontainer) {
 			this.enterroom(roomid, cb);
 		}
 		else {
-			console.log(roomname + " is not a listed room.");
+			this.cl.logerror(roomname + " is not a listed room.");
 		}
 	}
 
