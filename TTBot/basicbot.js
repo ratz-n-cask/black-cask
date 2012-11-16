@@ -123,23 +123,32 @@ function start(bot, botcontainer) {
 
 		return votelog;
 	}
-	
+	this.getplaylistlength = function(cb) {
+		var that = this;
+		this.bot.playlistAll(function(data) {
+			var list = data.list;
+			that.cl.logdata("Playlist length: " + list.length);
+			if (cb) {
+				cb(list.length);
+			}
+		});
+	}
 	this.snaganimation = function(cb) {
 		this.bot.snag(cb);
 	}
 	this.queuesong = function(songid, songname, cb) {
 		var that = this;
-		this.bot.playlistAdd(songid, function(data) {
-			if (data.success) {
-				that.cl.logmessage("You have just added " + songname + " to your queue!");
-			}
-			else {
-				that.cl.logerror("Could not add " + songname + " to queue.");
-			}
-		})
-		
+		this.getplaylistlength(function(length) {
+			that.bot.playlistAdd(songid, length, function(data) {
+				if (data.success) {
+					that.cl.logmessage("You have just added " + songname + " to your queue!");
+				}
+				else {
+					that.cl.logerror("Could not add " + songname + " to queue.");
+				}
+			})
+		});
 	}
-	
 	this.addsong = function(songdata, cb) {
 		var that = this;
 		var songid = songdata._id;
@@ -153,7 +162,15 @@ function start(bot, botcontainer) {
 	}
 	
 	this.skipsong = function(cb) {
-		this.bot.skip(cb);
+		var that = this;
+		this.bot.skip(function(data) {
+			if (data.success) {
+				that.cl.logmessage("You just skipped this song.");
+			}
+			else {
+				that.cl.logerror("You can't skip this song.");
+			}
+		});
 	}
 
 	this.addfan = function(fanname, cb) {
@@ -247,7 +264,7 @@ function start(bot, botcontainer) {
 				var thisroomname = thisroom.name_lower;
 				var thisroomid = thisroom.roomid;
 				if (thisroomname = roomname) {
-					that.cl.logdata(thisroom);
+					console.log(thisroom);
 					found = true;
 				}
 			}
@@ -259,7 +276,7 @@ function start(bot, botcontainer) {
 	this.getroominfo = function(songinfo, cb) {
 		var that = this;
 		this.bot.roomInfo(songinfo, function(data) {
-			that.cl.logdata(data);
+			console.log(data);
 		});
 	}
 	this.getroomusers = function(songinfo, cb) {
@@ -310,8 +327,15 @@ function start(bot, botcontainer) {
 			var roommetadata = data.room.metadata;
 			var songlog = data.room.metadata.songlog;
 			var currentsong = songlog[songlog.length - 1];
+			var currentsongmd = currentsong.metadata;
 			if (pm) {
-				that.cl.logdata(currentsong);	
+				for (var key in currentsong) {
+					that.cl.logdata(key + ": " + currentsong[key]);
+				}
+				console.log("\n");
+				for (var key in currentsongmd) {
+					that.cl.logdata(key + ": " + currentsongmd[key]);	
+				}
 			}
 			else {
 				that.sendmsg(":sound::" + currentsong.metadata.song + " by " + currentsong.metadata.artist + ". " + roommetadata.upvotes + "+ // " + roommetadata.downvotes + "-.");

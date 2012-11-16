@@ -12,19 +12,23 @@ var bot = new Bot(AUTH, USERID, ROOMID);
 var botContainer = new BotContainer(bot);
 var myBot = botContainer.basicbot;
 var botInfo = botContainer.botinfo;
+var lbi = botContainer.lbi;
 
-var roomObj = new Object();
+var roomObj = botInfo.roominfo;
 
 var authInfo = {
 	masterid: botInfo.MASTERID,
 	selfid: botInfo.USERID
 }
-repl.start("> ").context.mybot = myBot;
+repl.start("> ").context.lbi = lbi;
 myBot.bot.on("speak", function(data) {
 	var name = data.name;
 	var text = data.text;
 	var userid = data.userid;
 	
+	myBot.cl.yellow(name + ": ");
+	myBot.cl.logmessage(text + "\n");
+
 	//Vote Up
 	if (text.match(/^\/nod$/) || text.match(/^\/dontberude$/) || text.match(/^\/don\'tberude$/)) {
 		myBot.voteup();
@@ -356,3 +360,4 @@ myBot.bot.on("update_votes", function(data) {
 });
 
 myBot.cl.yellow("bot launched.");
+myBot.cl.yellow("use 'lbi' for repl bot interface.");
