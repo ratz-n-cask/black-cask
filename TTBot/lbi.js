@@ -31,7 +31,13 @@ var LiveBotInterface = function(bot, botcontainer) {
 			this.c.cl.logerror("songdata undefined.");
 		}
 	}
-	this.getinfo = function(username) {
+	this.room = function() {
+		this.bb.getroominfo(false);
+	}
+	this.users = function() {
+		this.bb.getroomusers(false);
+	}
+	this.user = function(username) {
 		this.bb.getuserinfo(username, false);
 	}
 	this.song = function() {

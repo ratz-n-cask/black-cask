@@ -9,7 +9,8 @@ function start(bot, botcontainer) {
 	this.roomid = this.bot.roomId;
 	
 	this.avatarcount = 0;
-	
+	this.mode;
+
 	this.votelog = {
 		up: 0,
 		down: 0,
@@ -54,7 +55,7 @@ function start(bot, botcontainer) {
 			this.bot.speak(msg);
 		}
 	}
-	this.whisper = function(msg, userid, cb) {
+	this.whisper = function(userid, msg, cb) {
 		var that = this;
 		this.bot.pm(msg, userid, function(data) {
 			if (data.success) {
@@ -66,7 +67,7 @@ function start(bot, botcontainer) {
 		var that = this;
 		this.getuserinfo(username, false, function(data) {
 			var userid = data._id;
-			that.whisper(msg, userid);
+			that.whisper(userid, msg);
 		});
 		
 	}
@@ -355,7 +356,12 @@ function start(bot, botcontainer) {
 			this.cl.logerror(roomname + " is not a listed room.");
 		}
 	}
-
+	this.whisperhelp = function(userid) {
+		this.whisper(userid, this.botinfo.sayings.help);
+	}
+	this.makewhisperhelp = function(username) {
+		this.makewhisper(username, this.botinfo.sayings.help)
+	}
 	return this;
 }
 

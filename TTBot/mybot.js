@@ -39,6 +39,31 @@ myBot.bot.on("speak", function(data) {
 		myBot.vote("down");
 	}
 	
+	//Skip the bot's current song
+	if (text.match(/^\/skipthis$/)) {
+		myBot.skipsong();		
+	}
+
+	//Get Song Info
+	if (text.match(/^\/song$/)) {
+		myBot.getsonginfo(false);
+	}
+
+	//About
+	if (text.match(/^\/about$/)) {
+		myBot.sendmsg("Prometheus by dopatraman");
+	}
+
+	//DirectMessage
+	if (text.match(/^@.prometheus/)) {
+		myBot.makewhisper(name, botInfo.sayings.iambot);
+	}
+
+	//Get Help
+	if (text.match(/^\/help$/)) {
+		myBot.sendmsg("@" + name + " please pm me with 'help' to see a list of my commands.");
+
+	} 
 	/********************Private Commands***************************/
 	
 	//Add a song to the queue
@@ -97,35 +122,6 @@ myBot.bot.on("speak", function(data) {
 		}
 	}
 
-	//Skip the bot's current song
-	if (text.match(/^\/skipthis$/)) {
-		if (userid == authInfo["masterid"]) {
-			myBot.skipsong();
-		}
-		else {
-			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
-		}
-	}
-
-	//Get Song Info
-	if (text.match(/^\/song$/)) {
-		if (userid == authInfo["masterid"]) {
-			myBot.getsonginfo(false);
-		}
-		else {
-			myBot.sendmsg("Sorry @" + name + ", that is a restricted command.");
-		}
-	}
-
-	//About
-	if (text.match(/^\/about$/)) {
-		myBot.sendmsg("Prometheus by @dopatraman");
-	}
-
-	//DirectMessage
-	if (text.match(/^@.prometheus$/)) {
-		console.log(text);
-	}
 });
 
 myBot.bot.on("pmmed", function(data) {
@@ -142,7 +138,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.voteup();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/addsong/) || text.match(/addthis/)) {
@@ -157,7 +153,7 @@ myBot.bot.on("pmmed", function(data) {
 			}
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/boo/)) {
@@ -165,7 +161,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.votedown();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	
@@ -174,7 +170,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.couriermsg(text);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	
@@ -183,7 +179,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.addfavoriteroom();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	
@@ -193,7 +189,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.addfan(fanName);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	
@@ -202,7 +198,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.becomedj();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 
@@ -211,7 +207,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.enddj();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	
@@ -220,7 +216,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.sendtoroom_raw(text, "goforthto ");
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	
@@ -229,7 +225,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.skipsong();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 
@@ -238,7 +234,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.getroominfo_raw(text, "getroominfo ", false);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/^getusers/)) {
@@ -246,7 +242,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.getroomusers(false);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/^getuserinfo/)) {
@@ -254,7 +250,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.getuserinfo_raw(text, "getuserinfo ", false);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/^songinfo/)) {
@@ -262,7 +258,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.getsonginfo(true);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/^getfavoriterooms/)) {
@@ -270,7 +266,7 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.getfavoriterooms();
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
 	}
 	if (text.match(/^whisper/)) {
@@ -282,8 +278,11 @@ myBot.bot.on("pmmed", function(data) {
 			myBot.makewhisper(username, msg);
 		}
 		else {
-			myBot.whisper("What's that? You don't have the proper badge!", userid);
+			myBot.whisper(userid, botInfo.sayings.nopermission);
 		}
+	}
+	if (text.match(/^help/)) {
+		myBot.whisperhelp(userid);
 	}
 	
 });

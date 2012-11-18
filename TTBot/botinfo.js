@@ -7,7 +7,11 @@ var BotInfo = function(bot, botcontainer) {
 	this.ROOMID = "4e278f3414169c7c218d136c";
 	this.MASTERID = "4ffc9d11eb35c124cb00001d";
 
-	this.sayings = new Array();
+	this.sayings = {
+		help: "/nod to bop \n /boo to lame \n /addthis to add the song to my queue \n /song to get the song info \n /skipthis to skip my song if I'm a DJ \n /about to learn more about me.",
+		nopermission: "What's that? You don't have the proper badge!",
+		iambot: "Sorry, I am a bot and cannot answer you. For a list of my commands, pm me with 'help' as your message."
+	}
 	this.rooms = {
 		"coak": "4e278f3414169c7c218d136c",
 		"lbjam": "4ff5bf40eb35c163d200001f",
