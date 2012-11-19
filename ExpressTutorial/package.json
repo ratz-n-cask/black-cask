@@ -1,11 +1,18 @@
 {
 	"name": "MySite",
-	"version": "0.0.1",
 	"private": true,
 	"dependencies": {
 		"express": "*",
 		"jade": "*",
 		"stylus": "*",
 		"nib": "*"
-	}
+	},
+	"scripts": {
+		"start": "node app.js"
+	},
+	"engines": {
+		"node": "0.6.x"
+	},
+	"subdomain": "mysite",
+	"version": "0.0.1-1"
 }
